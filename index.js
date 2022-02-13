@@ -14,7 +14,13 @@ io.on('connection', (socket) => {
 
   socket.on('newUser', (username) => {
     console.log(username);
-    io.emit('newUser', {
+
+    socket.emit('self', {
+      id: socket.id,
+      username: username
+    });
+
+    socket.broadcast.emit('newUser', {
       id: socket.id,
       username: username
     });
