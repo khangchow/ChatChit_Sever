@@ -1,0 +1,24 @@
+{
+  "name": "sever_taixiuv2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khangchow/Sever_TaiXiuV2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/khangchow/Sever_TaiXiuV2/issues"
+  },
+  "homepage": "https://github.com/khangchow/Sever_TaiXiuV2#readme",
+  "dependencies": {
+    "express": "^4.17.2",
+    "nodemon": "^2.0.15",
+    "socket.io": "^4.4.1"
+  }
+}
