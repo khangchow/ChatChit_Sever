@@ -12,19 +12,26 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('user disconnected');
+    var user = users.pop((user) => user.id === socket.id)
+
+    console.log("Disconnect ", user);
+    console.log(users);
+
     socket.broadcast.emit('userState', {
-        username: users.find((user) => user.id === socket.id).username,
+        username: user.username,
         state: 'left'
     });
   });
 
   socket.on('newUser', (username) => {
-    console.log(username);
+    console.log("Connect ", username);
 
     users.push({
       id: socket.id,
       username: username
     });
+
+    console.log(users);
 
     socket.emit('self', {
       id: socket.id,
