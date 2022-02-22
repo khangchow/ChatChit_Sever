@@ -5,13 +5,33 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+
 var users = [];
+var rooms = [];
+
+app.get('/room', (req, res) => {
+  res.send({'data': rooms, 'error': ''});
+});
+
+app.get('/newroom', (req, res) => {
+  var repeated = rooms.find(room => room.name === req.name)
+
+  if (repeated == null) {
+    rooms.push({
+      name: req.name,
+      active: 1
+    })
+    
+    res.send({'data': 'Created New Room', 'error': ''})
+  }
+  
+  res.send({'data': '', 'error': 'Repeated Room Name'});
+});
 
 io.on('connection', (socket) => {
-  console.log('a user connected ', socket.id);
-
   socket.on('disconnect', () => {
-    console.log('user disconnected');
     var user = users.pop((user) => user.id === socket.id)
 
     console.log("Disconnect ", user);
