@@ -15,22 +15,41 @@ app.get('/room', (req, res) => {
   res.send({'data': rooms, 'error': ''});
 });
 
-app.get('/newroom', (req, res) => {
-  var repeated = rooms.find(room => room.name === req.name)
+app.post('/newroom', (req, res) => {
+  var repeated = rooms.find(room => room.name === req.body.name)
 
   if (repeated == null) {
     rooms.push({
-      name: req.name,
+      name: req.body.name,
       active: 1
     })
     
+    console.log(rooms)
+
     res.send({'data': 'Created New Room', 'error': ''})
+  }else {
+    console.log(repeated)
+
+    res.send({'data': '', 'error': 'Repeated Room Name'});
   }
-  
-  res.send({'data': '', 'error': 'Repeated Room Name'});
 });
 
 io.on('connection', (socket) => {
+  socket.on('newUser', (username) => {
+    console.log("Connect ", username);
+
+    socket.emit('self', {
+      id: socket.id,
+      username: username,
+    });
+  
+    users.push({
+      id: socket.id,
+      username: username,
+      room: ''
+    })
+  })
+
   socket.on('disconnect', () => {
     var user = users.pop((user) => user.id === socket.id)
 
@@ -43,31 +62,26 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('newUser', (username) => {
-    console.log("Connect ", username);
+  // socket.on('newUserJoinedRoom', ({username, room}) => {
+  //   users.map((user) => {
+  //     if (user.id === socket.id) return {...user, room: room};
+  //     else return user;
+  //   })
 
-    users.push({
-      id: socket.id,
-      username: username
-    });
+  //   socket.join(room)
 
-    console.log(users);
+  //   socket.broadcast.to(room).emit('userState', {
+  //     username: username,
+  //     state: 'joined'
+  //   });
+  // });
 
-    socket.emit('self', {
-      id: socket.id,
-      username: username
-    });
-
-    socket.broadcast.emit('userState', {
-      username: username,
-      state: 'joined'
-    });
-  });
-
-  socket.on('chatMessage', (msg) => {
-    console.log(msg);
-    io.emit('chatMessage', msg);
-  });
+  // socket.on('chatMessage', (msg) => {
+  //   console.log(msg);
+  //   const user = users.find((user) => user.id === socket.id)
+  
+  //   io.to(user.room).emit('chatMessage', msg);
+  // });
 });
 
 server.listen(3000, () => {
