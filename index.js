@@ -16,7 +16,7 @@ app.get('/room', (req, res) => {
 });
 
 app.post('/newroom', (req, res) => {
-  var repeated = rooms.find(room => room.name === req.body.name)
+  const repeated = rooms.find(room => room.name === req.body.name)
 
   if (repeated == null) {
     rooms.push({
@@ -51,37 +51,59 @@ io.on('connection', (socket) => {
   })
 
   socket.on('disconnect', () => {
-    var user = users.pop((user) => user.id === socket.id)
+    const user = users.pop((user) => user.id === socket.id)
 
     console.log("Disconnect ", user);
     console.log(users);
+  });
 
-    socket.broadcast.emit('userState', {
-        username: user.username,
-        state: 'left'
+  socket.on('newUserJoinedRoom', (info) => {
+    const data = JSON.parse(info)
+    console.log(data)
+
+    for (const user of users) {
+      if (user.id === socket.id) {
+        user.room = data.room;
+    
+        break;
+      }
+    }
+
+    socket.join(data.room)
+
+    socket.to(data.room).emit('userState', {
+      username: data.username,
+      state: 'joined'
     });
   });
 
-  // socket.on('newUserJoinedRoom', ({username, room}) => {
-  //   users.map((user) => {
-  //     if (user.id === socket.id) return {...user, room: room};
-  //     else return user;
-  //   })
+  socket.on('leftRoom', (username) => {
+    var room = ''
 
-  //   socket.join(room)
+    for (const user of users) {
+      if (user.id === socket.id) {
+        room = user.room
+        console.log(username,' left ', room)
+        user.room = '';
+    
+        break;
+      }
+    }
 
-  //   socket.broadcast.to(room).emit('userState', {
-  //     username: username,
-  //     state: 'joined'
-  //   });
-  // });
+    socket.leave(room)
 
-  // socket.on('chatMessage', (msg) => {
-  //   console.log(msg);
-  //   const user = users.find((user) => user.id === socket.id)
-  
-  //   io.to(user.room).emit('chatMessage', msg);
-  // });
+    socket.to(room).emit('userState', {
+      username: username,
+      state: 'left'
+    });
+  });
+
+  socket.on('sendMessage',(msg) => {
+    const user = users.find((user) => user.id === socket.id)
+    const data = JSON.parse(msg)
+
+    io.in(user.room).emit('newMessage', msg);
+  });
 });
 
 server.listen(3000, () => {
