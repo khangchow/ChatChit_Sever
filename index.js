@@ -21,16 +21,16 @@ app.post('/newroom', (req, res) => {
   if (repeated == null) {
     rooms.push({
       name: req.body.name,
-      active: 1
+      active: 0
     })
     
     console.log(rooms)
 
-    res.send({'data': 'Created New Room', 'error': ''})
+    res.send({'data': 'Created new room', 'error': ''})
   }else {
     console.log(repeated)
 
-    res.send({'data': '', 'error': 'Repeated Room Name'});
+    res.send({'data': '', 'error': 'Repeated room name'});
   }
 });
 
@@ -61,6 +61,16 @@ io.on('connection', (socket) => {
     const data = JSON.parse(info)
     console.log(data)
 
+    rooms = rooms.map(obj => {
+      if (data.room === obj.name) {
+        return {...obj, active: obj.active + 1};
+      }
+    
+      return obj;
+    });
+
+    console.log(rooms)
+
     for (const user of users) {
       if (user.id === socket.id) {
         user.room = data.room;
@@ -86,6 +96,23 @@ io.on('connection', (socket) => {
         console.log(username,' left ', room)
         user.room = '';
     
+        rooms = rooms.map(obj => {
+          if (room === obj.name) {
+            return {...obj, active: obj.active - 1};
+          }
+        
+          return obj;
+        });
+
+        const check = rooms.find((check) => check.name === room)
+        console.log(check)
+
+        if (check.active === 0) {
+          const removed = rooms.pop((removed) => removed.name === room)
+
+          console.log(removed, "removed")
+        }
+
         break;
       }
     }
@@ -96,6 +123,8 @@ io.on('connection', (socket) => {
       username: username,
       state: 'left'
     });
+
+    socket.emit('leftRoom', 'You are now in lobby');
   });
 
   socket.on('sendMessage',(msg) => {
