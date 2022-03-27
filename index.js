@@ -34,6 +34,16 @@ app.post('/newroom', (req, res) => {
   }
 });
 
+app.post('/checkroom', (req, res) => {
+  const check = rooms.find(room => room.name === req.body.name)
+
+  if (check != null) {
+    res.send({'data': req.body.name, 'error': ''});
+  }else {
+    res.send({'data': '', 'error': 'NOT OK'});
+  }
+})
+
 io.on('connection', (socket) => {
   socket.on('newUser', (username) => {
     console.log("Connect ", username);
