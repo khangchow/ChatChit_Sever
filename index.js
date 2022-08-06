@@ -26,11 +26,11 @@ app.post('/newroom', (req, res) => {
     
     console.log(rooms)
 
-    res.send({'data': 'Created new room', 'error': ''})
+    res.send({'data': '', 'error': ''})
   }else {
     console.log(repeated)
 
-    res.send({'data': '', 'error': 'Repeated room name'});
+    res.send({'data': '', 'error': '101'});
   }
 });
 
@@ -40,7 +40,7 @@ app.post('/checkroom', (req, res) => {
   if (check != null) {
     res.send({'data': req.body.name, 'error': ''});
   }else {
-    res.send({'data': '', 'error': 'NOT OK'});
+    res.send({'data': '', 'error': '102'});
   }
 })
 
@@ -134,7 +134,7 @@ io.on('connection', (socket) => {
       state: 'left'
     });
 
-    socket.emit('leftRoom', 'You are now in lobby');
+    socket.emit('leftRoom');
   });
 
   socket.on('sendMessage',(msg) => {
