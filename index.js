@@ -4,12 +4,16 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
-
+const multer = require('./multer.js')
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
 var users = [];
 var rooms = [];
+
+// app.post('/loadingimage', multer.send, async (req, res) => {
+//   res.send({'data': {'url': req.file.path}, 'error': ''});
+// });
 
 app.get('/room', (req, res) => {
   res.send({'data': rooms, 'error': ''});
@@ -21,7 +25,7 @@ app.post('/newroom', (req, res) => {
   if (repeated == null) {
     rooms.push({
       name: req.body.name,
-      active: 0
+      activeUser: 0
     })
     
     console.log(rooms)
@@ -45,10 +49,10 @@ app.post('/checkroom', (req, res) => {
 })
 
 io.on('connection', (socket) => {
-  socket.on('newUser', (username) => {
+  socket.on('EVENT_JOINED_LOBBY', (username) => {
     console.log("Connect ", username);
 
-    socket.emit('self', {
+    socket.emit('EVENT_JOINED_LOBBY', {
       id: socket.id,
       username: username,
     });
@@ -67,13 +71,13 @@ io.on('connection', (socket) => {
     console.log(users);
   });
 
-  socket.on('newUserJoinedRoom', (info) => {
+  socket.on('EVENT_UPDATE_USER_STATE', (info) => {
     const data = JSON.parse(info)
     console.log(data)
 
     rooms = rooms.map(obj => {
       if (data.room === obj.name) {
-        return {...obj, active: obj.active + 1};
+        return {...obj, activeUser: obj.activeUser + 1};
       }
     
       return obj;
@@ -91,13 +95,13 @@ io.on('connection', (socket) => {
 
     socket.join(data.room)
 
-    socket.to(data.room).emit('userState', {
+    socket.to(data.room).emit('EVENT_UPDATE_USER_STATE', {
       username: data.username,
-      state: 'joined'
+      state: 'state_joined'
     });
   });
 
-  socket.on('leftRoom', (username) => {
+  socket.on('EVENT_LEFT_ROOM', (username) => {
     var room = ''
 
     for (const user of users) {
@@ -108,7 +112,7 @@ io.on('connection', (socket) => {
     
         rooms = rooms.map(obj => {
           if (room === obj.name) {
-            return {...obj, active: obj.active - 1};
+            return {...obj, activeUser: obj.activeUser - 1};
           }
         
           return obj;
@@ -117,7 +121,7 @@ io.on('connection', (socket) => {
         const check = rooms.find((check) => check.name === room)
         console.log(check)
 
-        if (check.active === 0) {
+        if (check.activeUser === 0) {
           const removed = rooms.pop((removed) => removed.name === room)
 
           console.log(removed, "removed")
@@ -129,19 +133,20 @@ io.on('connection', (socket) => {
 
     socket.leave(room)
 
-    socket.to(room).emit('userState', {
+    socket.to(room).emit('EVENT_UPDATE_USER_STATE', {
       username: username,
-      state: 'left'
+      state: 'state_left'
     });
 
-    socket.emit('leftRoom');
+    socket.emit('EVENT_LEFT_ROOM');
   });
 
-  socket.on('sendMessage',(msg) => {
-    const user = users.find((user) => user.id === socket.id)
+  socket.on('EVENT_SEND_MESSAGE',(msg) => {
     const data = JSON.parse(msg)
-
-    io.in(user.room).emit('newMessage', msg);
+    data.status = 'completed'
+    socket.emit('EVENT_SEND_SUCCESSFULLY', data);
+    data.type = 'type_message_receive'
+    socket.to(data.room).emit('EVENT_NEW_MESSAGE', data);
   });
 });
 
