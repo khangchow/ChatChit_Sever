@@ -4,16 +4,44 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
-const multer = require('./multer.js')
+const multer = require('multer')
+
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
+app.use('/uploads', express.static('uploads'));
 
 var users = [];
 var rooms = [];
 
-// app.post('/loadingimage', multer.send, async (req, res) => {
-//   res.send({'data': {'url': req.file.path}, 'error': ''});
-// });
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: function(req, file, cb) {
+    cb(null,  Date.now()+file.originalname)
+  }
+})
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') { //file.mimetype === 'application/pdf'
+      cb(null, true)
+    } else {
+      cb(null, false)
+    //   return cb(new Error('Only .png, .jpg, .mp4 and .jpeg format allowed!'))
+    }
+}
+
+const upload = multer({
+  storage: storage, 
+  // fileFilter,
+  // limits: {
+  //     fileSize: 1024*1024*5
+  // }
+})
+
+app.post('/sendimage', upload.single('image'), async (req, res) => {
+  console.log('file:', req.file);
+  console.log('path:', req.file.path);
+  res.send({'data': {'url': req.file.path}, 'error': ''});
+});
 
 app.get('/room', (req, res) => {
   res.send({'data': rooms, 'error': ''});
@@ -25,7 +53,8 @@ app.post('/newroom', (req, res) => {
   if (repeated == null) {
     rooms.push({
       name: req.body.name,
-      activeUser: 0
+      activeUser: 0,
+      images: []
     })
     
     console.log(rooms)
@@ -123,7 +152,7 @@ io.on('connection', (socket) => {
 
         if (check.activeUser === 0) {
           const removed = rooms.pop((removed) => removed.name === room)
-
+          
           console.log(removed, "removed")
         }
 
