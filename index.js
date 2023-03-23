@@ -99,7 +99,23 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const user = users.pop((user) => user.id === socket.id)
-
+    if (user.room != "") {
+      rooms = rooms.map(obj => {
+        if (user.room === obj.name) {
+          return {...obj, activeUser: obj.activeUser - 1};
+        }
+        return obj;
+      });
+      const check = rooms.find((check) => check.name === user.room)
+      if (check.activeUser === 0) {
+        const removed = rooms.pop((removed) => removed.name === users)
+        var fs = require('fs');
+        for (const image of check.images) {
+          fs.unlinkSync(image) 
+        }
+        console.log(removed, "removed")
+      }
+    }
     console.log("Disconnect ", user);
     console.log(users);
   });
