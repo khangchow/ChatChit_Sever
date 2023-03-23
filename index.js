@@ -37,9 +37,13 @@ const upload = multer({
   // }
 })
 
-app.post('/sendimage', upload.single('image'), async (req, res) => {
-  console.log('file:', req.file);
-  console.log('path:', req.file.path);
+app.post('/sendimage', upload.single('image'), (req, res) => {
+  console.log(req.body.room)
+  for (const room of rooms) {
+    if (req.body.room === room.name) {
+        room.images.push(req.file.path)
+    }
+  }
   res.send({'data': {'url': req.file.path}, 'error': ''});
 });
 
@@ -130,7 +134,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('EVENT_LEFT_ROOM', (username) => {
+  socket.on('EVENT_LEFT_ROOM', async (username) => {
     var room = ''
 
     for (const user of users) {
@@ -148,11 +152,13 @@ io.on('connection', (socket) => {
         });
 
         const check = rooms.find((check) => check.name === room)
-        console.log(check)
 
         if (check.activeUser === 0) {
           const removed = rooms.pop((removed) => removed.name === room)
-          
+          var fs = require('fs');
+          for (const image of check.images) {
+            fs.unlinkSync(image) 
+          }
           console.log(removed, "removed")
         }
 
