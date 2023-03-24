@@ -107,13 +107,18 @@ io.on('connection', (socket) => {
         return obj;
       });
       const check = rooms.find((check) => check.name === user.room)
-      if (check.activeUser === 0) {
+      if (check != null && check.activeUser === 0) {
         const removed = rooms.pop((removed) => removed.name === users)
         var fs = require('fs');
         for (const image of check.images) {
           fs.unlinkSync(image) 
         }
         console.log(removed, "removed")
+      } else {
+        socket.to(user.room).emit('EVENT_UPDATE_USER_STATE', {
+          username: user.username,
+          state: 'state_left'
+        });
       }
     }
     console.log("Disconnect ", user);
@@ -169,26 +174,24 @@ io.on('connection', (socket) => {
 
         const check = rooms.find((check) => check.name === room)
 
-        if (check.activeUser === 0) {
+        if (check != null && check.activeUser === 0) {
           const removed = rooms.pop((removed) => removed.name === room)
           var fs = require('fs');
           for (const image of check.images) {
             fs.unlinkSync(image) 
           }
           console.log(removed, "removed")
+        } else {
+          socket.to(room).emit('EVENT_UPDATE_USER_STATE', {
+            username: username,
+            state: 'state_left'
+          });
         }
 
         break;
       }
     }
-
     socket.leave(room)
-
-    socket.to(room).emit('EVENT_UPDATE_USER_STATE', {
-      username: username,
-      state: 'state_left'
-    });
-
     socket.emit('EVENT_LEFT_ROOM');
   });
 
