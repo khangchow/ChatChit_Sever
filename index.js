@@ -12,6 +12,15 @@ app.use('/uploads', express.static('uploads'));
 
 var users = [];
 var rooms = [];
+rooms.push({
+  name: 'a',
+  activeUser: 1,
+  images: [],
+  messages: []
+})
+for (let i = 0; i < 50; i++) { 
+  rooms[0].messages.push(i)
+}
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -51,6 +60,52 @@ app.get('/room', (req, res) => {
   res.send({'data': rooms, 'error': ''});
 });
 
+app.get('/history', (req, res) => {
+  var limit = 20
+  var room = rooms.find(room => room.name === req.body.room)
+  var startAt = req.body.startAt
+  var endPosition = 0
+  var page = req.body.page
+  var isEnded = false
+  console.log('startAt', startAt)
+  if (room != null) {
+    if (startAt == 0 && page == 1) {
+      if (room.messages.length < limit) {
+        console.log(1)
+        endPosition = room.messages.length
+      } else {
+        console.log(2)
+        startAt = room.messages.length - limit
+        endPosition = startAt + limit
+      }
+    } else {
+      console.log(3)
+      temp = startAt - limit
+      if (temp < 0) {
+        isEnded = true
+        console.log(4)
+        endPosition = limit - startAt
+        startAt = 0
+      } else {
+        console.log(5)
+        startAt = startAt - limit
+        endPosition = startAt + limit
+      }
+    }
+    console.log(startAt)
+    console.log(endPosition)
+    page++;
+    res.send({'data': {
+      'messages': room.messages.slice(startAt, endPosition),
+      'lastStartPosition': startAt,
+      'nextPage': page,
+      'isEnded': isEnded
+    }, 'error': ''});
+  } else {
+    res.send({'data': '', 'error': '103'});
+  }
+});
+
 app.post('/newroom', (req, res) => {
   const repeated = rooms.find(room => room.name === req.body.name)
 
@@ -58,7 +113,8 @@ app.post('/newroom', (req, res) => {
     rooms.push({
       name: req.body.name,
       activeUser: 0,
-      images: []
+      images: [],
+      messages: []
     })
     
     console.log(rooms)
@@ -107,7 +163,7 @@ io.on('connection', (socket) => {
         return obj;
       });
       const check = rooms.find((check) => check.name === user.room)
-      if (check != null && check.activeUser === 0) {
+      if (check != null && check.activeUser == 0) {
         const removed = rooms.pop((removed) => removed.name === users)
         var fs = require('fs');
         for (const image of check.images) {
@@ -174,7 +230,7 @@ io.on('connection', (socket) => {
 
         const check = rooms.find((check) => check.name === room)
 
-        if (check != null && check.activeUser === 0) {
+        if (check != null && check.activeUser == 0) {
           const removed = rooms.pop((removed) => removed.name === room)
           var fs = require('fs');
           for (const image of check.images) {
@@ -201,6 +257,11 @@ io.on('connection', (socket) => {
     socket.emit('EVENT_SEND_SUCCESSFULLY', data);
     data.type = 'type_message_receive'
     socket.to(data.room).emit('EVENT_NEW_MESSAGE', data);
+    for (const room of rooms) {
+      if (data.room === room.name) {
+          room.messages.push(data)
+      }
+    }
   });
 });
 
