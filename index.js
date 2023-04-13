@@ -12,15 +12,6 @@ app.use('/uploads', express.static('uploads'));
 
 var users = [];
 var rooms = [];
-rooms.push({
-  name: 'a',
-  activeUser: 1,
-  images: [],
-  messages: []
-})
-for (let i = 0; i < 50; i++) { 
-  rooms[0].messages.push(i)
-}
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -61,39 +52,38 @@ app.get('/room', (req, res) => {
 });
 
 app.get('/history', (req, res) => {
-  var limit = 20
+  var limit = 10
   var room = rooms.find(room => room.name === req.body.room)
-  var startAt = req.body.startAt
+  var startAt = req.body.lastStartPosition
   var endPosition = 0
   var page = req.body.page
   var isEnded = false
-  console.log('startAt', startAt)
   if (room != null) {
     if (startAt == 0 && page == 1) {
       if (room.messages.length < limit) {
-        console.log(1)
+        isEnded = true
         endPosition = room.messages.length
       } else {
-        console.log(2)
         startAt = room.messages.length - limit
         endPosition = startAt + limit
+        if (startAt == 0) {
+          isEnded = true
+        }
       }
     } else {
-      console.log(3)
       temp = startAt - limit
       if (temp < 0) {
         isEnded = true
-        console.log(4)
         endPosition = limit - startAt
         startAt = 0
       } else {
-        console.log(5)
         startAt = startAt - limit
         endPosition = startAt + limit
+        if (startAt == 0) {
+          isEnded = true
+        }
       }
     }
-    console.log(startAt)
-    console.log(endPosition)
     page++;
     res.send({'data': {
       'messages': room.messages.slice(startAt, endPosition),
