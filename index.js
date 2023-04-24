@@ -13,6 +13,22 @@ app.use('/uploads', express.static('uploads'));
 var users = [];
 var rooms = [];
 
+rooms.push({
+      name: 'a',
+      activeUser: 0,
+      images: [],
+      messages: []
+    })
+
+for (var i = 0; i <= 10; i++) {
+  rooms.push({
+      name: String(i),
+      activeUser: 0,
+      images: [],
+      messages: []
+    })
+}
+
 const storage = multer.diskStorage({
   destination: 'uploads/',
   filename: function(req, file, cb) {
@@ -47,12 +63,8 @@ app.post('/sendimage', upload.single('image'), (req, res) => {
   res.send({'data': {'url': req.file.path}, 'error': ''});
 });
 
-app.get('/room', (req, res) => {
-  res.send({'data': rooms, 'error': ''});
-});
-
-app.get('/history', (req, res) => {
-  var limit = 10
+app.get('/chat/history', (req, res) => {
+  var limit = 20
   var room = rooms.find(room => room.name === req.body.room)
   var startAt = req.body.lastStartPosition
   var endPosition = 0
@@ -86,14 +98,56 @@ app.get('/history', (req, res) => {
     }
     page++;
     res.send({'data': {
-      'messages': room.messages.slice(startAt, endPosition),
-      'lastStartPosition': startAt,
+      'messages': room.messages.slice(startAt, endPosition)
+    },
+    'lastStartPosition': parseInt(startAt),
       'nextPage': page,
-      'isEnded': isEnded
-    }, 'error': ''});
+      'isEnded': isEnded,
+     'error': ''});
   } else {
     res.send({'data': '', 'error': '103'});
   }
+});
+
+app.get('/room', (req, res) => {
+  var limit = 5
+  var startAt = req.body.lastStartPosition
+  var endPosition = 0
+  var page = req.body.page
+  var isEnded = false
+    if (startAt == 0 && page == 1) {
+      if (rooms.length < limit) {
+        isEnded = true
+        endPosition = rooms.length
+      } else {
+        startAt = rooms.length - limit
+        endPosition = startAt + limit
+        if (startAt == 0) {
+          isEnded = true
+        }
+      }
+    } else {
+      temp = startAt - limit
+      if (temp < 0) {
+        isEnded = true
+        endPosition = limit - startAt
+        startAt = 0
+      } else {
+        startAt = startAt - limit
+        endPosition = startAt + limit
+        if (startAt == 0) {
+          isEnded = true
+        }
+      }
+    }
+    page++;
+    res.send({'data': {
+      'messages': rooms.slice(startAt, endPosition),
+    }, 
+    'lastStartPosition': parseInt(startAt),
+      'nextPage': page,
+      'isEnded': isEnded,
+    'error': ''});
 });
 
 app.post('/newroom', (req, res) => {
