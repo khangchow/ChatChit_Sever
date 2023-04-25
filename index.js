@@ -92,44 +92,7 @@ app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
 });
 
 app.get('/room', (req, res) => {
-  var limit = 5
-  var startAt = req.body.lastStartPosition
-  var endPosition = 0
-  var page = req.body.page
-  var isEnded = false
-    if (startAt == 0 && page == 1) {
-      if (rooms.length < limit) {
-        isEnded = true
-        endPosition = rooms.length
-      } else {
-        startAt = rooms.length - limit
-        endPosition = startAt + limit
-        if (startAt == 0) {
-          isEnded = true
-        }
-      }
-    } else {
-      temp = startAt - limit
-      if (temp < 0) {
-        isEnded = true
-        endPosition = limit - startAt
-        startAt = 0
-      } else {
-        startAt = startAt - limit
-        endPosition = startAt + limit
-        if (startAt == 0) {
-          isEnded = true
-        }
-      }
-    }
-    page++;
-    res.send({'data': {
-      'messages': rooms.slice(startAt, endPosition),
-    }, 
-    'lastStartPosition': parseInt(startAt),
-      'nextPage': page,
-      'isEnded': isEnded,
-    'error': ''});
+  res.send({'data': rooms, 'error': ''})
 });
 
 app.post('/newroom', (req, res) => {
