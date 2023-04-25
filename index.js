@@ -15,18 +15,13 @@ var rooms = [];
 
 rooms.push({
       name: 'a',
-      activeUser: 0,
+      activeUser: 1,
       images: [],
       messages: []
     })
 
 for (var i = 0; i <= 10; i++) {
-  rooms.push({
-      name: String(i),
-      activeUser: 0,
-      images: [],
-      messages: []
-    })
+  rooms[0].messages.push(i)
 }
 
 const storage = multer.diskStorage({
@@ -63,12 +58,12 @@ app.post('/sendimage', upload.single('image'), (req, res) => {
   res.send({'data': {'url': req.file.path}, 'error': ''});
 });
 
-app.get('/chat/history', (req, res) => {
-  var limit = 20
-  var room = rooms.find(room => room.name === req.body.room)
-  var startAt = req.body.lastStartPosition
+app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
+  var limit = 5
+  var room = rooms.find(room => room.name === req.params['room'])
+  var startAt = req.params['lastStartPosition'] ? req.params['lastStartPosition'] : 0
   var endPosition = 0
-  var page = req.body.page
+  var page = req.params['page'] ? req.params['page'] : 1
   var isEnded = false
   if (room != null) {
     if (startAt == 0 && page == 1) {
@@ -100,10 +95,8 @@ app.get('/chat/history', (req, res) => {
     res.send({'data': {
       'messages': room.messages.slice(startAt, endPosition)
     },
-    'lastStartPosition': parseInt(startAt),
-      'nextPage': page,
-      'isEnded': isEnded,
-     'error': ''});
+    'nextUrl': (isEnded) ? '' : 'chat/history/'+req.params['room']+'/'+startAt+'/'+page,
+    'error': ''});
   } else {
     res.send({'data': '', 'error': '103'});
   }
