@@ -13,17 +13,6 @@ app.use('/uploads', express.static('uploads'));
 var users = [];
 var rooms = [];
 
-rooms.push({
-      name: 'a',
-      activeUser: 1,
-      images: [],
-      messages: []
-    })
-
-for (var i = 0; i <= 10; i++) {
-  rooms[0].messages.push(i)
-}
-
 const storage = multer.diskStorage({
   destination: 'uploads/',
   filename: function(req, file, cb) {
