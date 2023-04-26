@@ -48,7 +48,7 @@ app.post('/sendimage', upload.single('image'), (req, res) => {
 });
 
 app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
-  var limit = 5
+  var limit = 20
   var room = rooms.find(room => room.name === req.params['room'])
   var startAt = req.params['lastStartPosition'] ? req.params['lastStartPosition'] : 0
   var endPosition = 0
@@ -70,10 +70,10 @@ app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
       temp = startAt - limit
       if (temp < 0) {
         isEnded = true
-        endPosition = limit - startAt
+        endPosition = startAt
         startAt = 0
       } else {
-        startAt = startAt - limit
+        startAt = temp
         endPosition = startAt + limit
         if (startAt == 0) {
           isEnded = true
@@ -81,9 +81,7 @@ app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
       }
     }
     page++;
-    res.send({'data': {
-      'messages': room.messages.slice(startAt, endPosition)
-    },
+    res.send({'data': room.messages.slice(startAt, endPosition),
     'nextUrl': (isEnded) ? '' : 'chat/history/'+req.params['room']+'/'+startAt+'/'+page,
     'error': ''});
   } else {
@@ -128,7 +126,7 @@ app.post('/checkroom', (req, res) => {
 
 io.on('connection', (socket) => {
   socket.on('EVENT_JOINED_LOBBY', (username) => {
-    console.log("Connect ", username);
+    console.log("Connect ", username, " ", socket.id);
 
     socket.emit('EVENT_JOINED_LOBBY', {
       id: socket.id,
