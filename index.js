@@ -44,7 +44,7 @@ app.post('/sendimage', upload.single('image'), (req, res) => {
         room.images.push(req.file.path)
     }
   }
-  res.send({'data': {'url': req.file.path}, 'error': ''});
+  res.send({'data': {'url': req.file.path}});
 });
 
 app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
@@ -82,15 +82,14 @@ app.get('/chat/history/:room/:lastStartPosition?/:page?', (req, res) => {
     }
     page++;
     res.send({'data': room.messages.slice(startAt, endPosition),
-    'nextUrl': (isEnded) ? '' : 'chat/history/'+req.params['room']+'/'+startAt+'/'+page,
-    'error': ''});
+    'nextUrl': (isEnded) ? '' : 'chat/history/'+req.params['room']+'/'+startAt+'/'+page});
   } else {
-    res.send({'data': '', 'error': '103'});
+    res.status(400).send();
   }
 });
 
 app.get('/room', (req, res) => {
-  res.send({'data': rooms, 'error': ''})
+  res.send({'data': rooms})
 });
 
 app.post('/newroom', (req, res) => {
@@ -106,11 +105,11 @@ app.post('/newroom', (req, res) => {
     
     console.log(rooms)
 
-    res.send({'data': '', 'error': ''})
+    res.send({})
   }else {
     console.log(repeated)
 
-    res.send({'data': '', 'error': '101'});
+    res.status(400).send();
   }
 });
 
@@ -118,9 +117,9 @@ app.post('/checkroom', (req, res) => {
   const check = rooms.find(room => room.name === req.body.name)
 
   if (check != null) {
-    res.send({'data': req.body.name, 'error': ''});
+    res.send({'data': req.body.name});
   }else {
-    res.send({'data': '', 'error': '102'});
+    res.status(400).send();
   }
 })
 
@@ -142,6 +141,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const user = users.pop((user) => user.id === socket.id)
+    if (user == null) return
     if (user.room != "") {
       rooms = rooms.map(obj => {
         if (user.room === obj.name) {
